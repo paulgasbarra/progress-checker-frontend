@@ -7,7 +7,7 @@ const HomePage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const response = await fetch("/api/admins/login", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admins/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
