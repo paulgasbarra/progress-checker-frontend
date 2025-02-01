@@ -1,8 +1,11 @@
-import React, { useState, CSSProperties } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Container, TextField, Button, Typography, Box } from "@mui/material";
 
 const HomePage: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -17,7 +20,7 @@ const HomePage: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        alert(`Welcome, ${data.email}!`);
+        navigate("/admin"); // Redirect to admin dashboard
       } else {
         alert("Login failed. Please check your credentials.");
       }
@@ -28,95 +31,40 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        <h1 style={styles.title}>Pursuit Progress Tracker</h1>
-        <p style={styles.description}>
-          Welcome to the Pursuit Progress Tracker! Track your projects,
-          milestones, and submissions with ease.
-        </p>
-        <form onSubmit={handleLogin} style={styles.form}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={styles.input}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={styles.input}
-          />
-          <button type="submit" style={styles.button}>
-            Login
-          </button>
-        </form>
-      </div>
-    </div>
+    <Container maxWidth="xs">
+      <Typography variant="h4" align="center" gutterBottom>
+        Pursuit Progress Tracker
+      </Typography>
+      <Typography variant="body1" align="center" gutterBottom>
+        Welcome to the Pursuit Progress Tracker! Track your projects, milestones, and submissions with ease.
+      </Typography>
+      <Box component="form" onSubmit={handleLogin} sx={{ mt: 3 }}>
+        <TextField
+          label="Email"
+          type="email"
+          variant="outlined"
+          fullWidth
+          margin="normal"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <TextField
+          label="Password"
+          type="password"
+          variant="outlined"
+          fullWidth
+          margin="normal"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <Button type="submit" variant="contained" color="primary" fullWidth>
+          Login
+        </Button>
+      </Box>
+    </Container>
   );
-};
-
-const styles: { [key: string]: CSSProperties } = {
-  page: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100vw",
-    height: "100vh",
-    backgroundColor: "#f0f0f0",
-  },
-  container: {
-    display: "flex",
-    flexDirection: "column" as "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "20px",
-    borderRadius: "8px",
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-    backgroundColor: "#ffffff",
-  },
-  title: {
-    fontSize: "2.5rem",
-    color: "#333",
-    marginBottom: "10px",
-  },
-  description: {
-    fontSize: "1.2rem",
-    color: "#666",
-    textAlign: "center",
-    maxWidth: "600px",
-    marginBottom: "20px",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column" as "column",
-    alignItems: "center",
-  },
-  input: {
-    margin: "10px 0",
-    padding: "10px",
-    fontSize: "1rem",
-    width: "250px",
-    border: "1px solid #ccc",
-    borderRadius: "4px",
-    backgroundColor: "#f9f9f9",
-    color: "#333",
-  },
-  button: {
-    padding: "10px 20px",
-    fontSize: "1rem",
-    backgroundColor: "#007BFF",
-    color: "#fff",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-    marginTop: "10px",
-  },
 };
 
 export default HomePage; 
