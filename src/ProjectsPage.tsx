@@ -32,6 +32,7 @@ const ProjectsPage: React.FC = () => {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [openCreateProjectModal, setOpenCreateProjectModal] = useState(false);
   const [openEditProjectModal, setOpenEditProjectModal] = useState(false);
+  const [openViewProjectModal, setOpenViewProjectModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDescription, setNewProjectDescription] = useState("");
@@ -128,6 +129,17 @@ const ProjectsPage: React.FC = () => {
     }
   };
 
+  const handleOpenCreateProjectModal = () => {
+    // Reset form fields
+    setNewProjectName("");
+    setNewProjectDescription("");
+    setMilestones([]);
+    setNewMilestoneTitle("");
+    setNewMilestoneDescription("");
+    setNewCriteria("");
+    setOpenCreateProjectModal(true);
+  };
+
   const handleEditProject = async (project: Project) => {
     console.log("Editing project:", project);
     setSelectedProject(project);
@@ -135,6 +147,13 @@ const ProjectsPage: React.FC = () => {
     setNewProjectDescription(project.description);
     await fetchMilestonesForProject(project.id);
     setOpenEditProjectModal(true);
+  };
+
+  const handleViewProject = async (project: Project) => {
+    console.log("Viewing project:", project);
+    setSelectedProject(project);
+    await fetchMilestonesForProject(project.id);
+    setOpenViewProjectModal(true);
   };
 
   const handleSaveProjectChanges = async () => {
@@ -175,7 +194,7 @@ const ProjectsPage: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Projects
       </Typography>
-      <Button variant="contained" color="primary" onClick={() => setOpenCreateProjectModal(true)}>
+      <Button variant="contained" color="primary" onClick={handleOpenCreateProjectModal}>
         Create Project
       </Button>
       <List>
@@ -183,13 +202,13 @@ const ProjectsPage: React.FC = () => {
           <ListItem
             key={project.id}
             sx={{ border: '1px solid #ccc', borderRadius: '4px', mb: 1 }}
-            secondaryAction={
-              <IconButton edge="end" onClick={() => handleEditProject(project)}>
-                <EditIcon />
-              </IconButton>
-            }
+            onClick={() => handleViewProject(project)}
+            button
           >
             <ListItemText primary={project.name} secondary={project.description} />
+            <IconButton edge="end" onClick={(e) => { e.stopPropagation(); handleEditProject(project); }}>
+              <EditIcon />
+            </IconButton>
           </ListItem>
         ))}
       </List>
@@ -324,6 +343,34 @@ const ProjectsPage: React.FC = () => {
           <Button variant="contained" color="primary" sx={{ mt: 2 }} onClick={handleSaveProjectChanges}>
             Save Changes
           </Button>
+        </Box>
+      </Modal>
+
+      {/* View Project Modal */}
+      <Modal open={openViewProjectModal} onClose={() => setOpenViewProjectModal(false)}>
+        <Box sx={{ ...modalStyle }}>
+          <Typography variant="h6">View Project</Typography>
+          {selectedProject && (
+            <>
+              <Typography variant="subtitle1">Name: {selectedProject.name}</Typography>
+              <Typography variant="body2">Description: {selectedProject.description}</Typography>
+              <Typography variant="h6" sx={{ mt: 2 }}>Milestones</Typography>
+              {milestones && milestones.map((milestone) => (
+                <Box key={milestone.id} sx={{ mb: 2 }}>
+                  <Typography variant="subtitle1">{milestone.title}</Typography>
+                  <Typography variant="body2">{milestone.description}</Typography>
+                  <Typography variant="body2">Criteria:</Typography>
+                  <List>
+                    {milestone.criteria && milestone.criteria.map((criterion, index) => (
+                      <ListItem key={index}>
+                        <ListItemText primary={criterion} />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+              ))}
+            </>
+          )}
         </Box>
       </Modal>
     </Container>
