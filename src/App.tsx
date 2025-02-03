@@ -5,6 +5,7 @@ import HomePage from "./HomePage";
 import AdminDashboard from "./AdminDashboard";
 import StudentDashboard from "./StudentDashboard";
 import ProjectsPage from "./ProjectsPage";
+import MilestonesPage from "./MilestonesPage";
 
 const drawerWidth = 240;
 
@@ -30,20 +31,24 @@ const App: React.FC = () => {
             <ListItem button component="a" href="/projects">
               <ListItemText primary="Projects" />
             </ListItem>
-            {["Milestones", "Submissions", "Students"].map((text) => (
+            <ListItem button component="a" href="/milestones">
+              <ListItemText primary="Milestones" />
+            </ListItem>
+            {["Submissions", "Students"].map((text) => (
               <ListItem button key={text}>
-              <ListItemText primary={text} />
+                <ListItemText primary={text} />
               </ListItem>
             ))}
           </List>
         </Drawer>
-        <main style={{marginLeft: drawerWidth }}>
+        <main style={{ marginLeft: drawerWidth }}>
           <Toolbar />
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/student" element={<StudentDashboard />} />
             <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/milestones" element={<MilestonesPage />} />
           </Routes>
         </main>
       </div>
