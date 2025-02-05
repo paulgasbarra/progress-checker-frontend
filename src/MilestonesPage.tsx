@@ -10,6 +10,7 @@ import {
   Box,
   TextField,
   IconButton,
+  Alert,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -18,6 +19,7 @@ import SaveIcon from "@mui/icons-material/Save";
 interface Milestone {
   id: number;
   title: string;
+  description: string;
 }
 
 interface Criteria {
@@ -33,19 +35,26 @@ const MilestonesPage: React.FC = () => {
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
   const [newMilestoneTitle, setNewMilestoneTitle] = useState("");
+  const [newMilestoneDescription, setNewMilestoneDescription] = useState("");
   const [newCriteriaTitle, setNewCriteriaTitle] = useState("");
   const [editingCriteria, setEditingCriteria] = useState<Criteria | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [serverAvailable, setServerAvailable] = useState(true);
 
   useEffect(() => {
     // Fetch milestones from the server
     const fetchMilestones = async () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/milestones`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         setMilestones(data);
+        setServerAvailable(true);
       } catch (error) {
         console.error("Error fetching milestones:", error);
+        setServerAvailable(false);
       }
     };
 
@@ -69,7 +78,7 @@ const MilestonesPage: React.FC = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ title: newMilestoneTitle }),
+        body: JSON.stringify({ title: newMilestoneTitle, description: newMilestoneDescription }),
       });
 
       if (response.ok) {
@@ -77,6 +86,7 @@ const MilestonesPage: React.FC = () => {
         setMilestones([...milestones, newMilestone]);
         setOpenCreateModal(false);
         setNewMilestoneTitle("");
+        setNewMilestoneDescription("");
       } else {
         alert("Failed to create milestone.");
       }
@@ -159,7 +169,7 @@ const MilestonesPage: React.FC = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ title: newMilestoneTitle }),
+        body: JSON.stringify({ title: newMilestoneTitle, description: newMilestoneDescription }),
       });
 
       if (response.ok) {
@@ -180,6 +190,11 @@ const MilestonesPage: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Milestones
       </Typography>
+      {!serverAvailable && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Server is unavailable. Please try again later.
+        </Alert>
+      )}
       <Button variant="contained" color="primary" onClick={() => setOpenCreateModal(true)}>
         Create Milestone
       </Button>
@@ -191,12 +206,13 @@ const MilestonesPage: React.FC = () => {
             onClick={() => {
               setSelectedMilestone(milestone);
               setNewMilestoneTitle(milestone.title);
+              setNewMilestoneDescription(milestone.description);
               fetchCriteria(milestone.id);
               setOpenEditModal(true);
             }}
             sx={{ border: '1px solid #ccc', borderRadius: '4px', mb: 1 }}
           >
-            <ListItemText primary={milestone.title} />
+            <ListItemText primary={milestone.title} secondary={milestone.description} />
           </ListItem>
         ))}
       </List>
@@ -211,6 +227,13 @@ const MilestonesPage: React.FC = () => {
             margin="normal"
             value={newMilestoneTitle}
             onChange={(e) => setNewMilestoneTitle(e.target.value)}
+          />
+          <TextField
+            label="Milestone Description"
+            fullWidth
+            margin="normal"
+            value={newMilestoneDescription}
+            onChange={(e) => setNewMilestoneDescription(e.target.value)}
           />
           <Button variant="contained" color="primary" onClick={handleCreateMilestone}>
             Create
@@ -228,6 +251,13 @@ const MilestonesPage: React.FC = () => {
             margin="normal"
             value={newMilestoneTitle}
             onChange={(e) => setNewMilestoneTitle(e.target.value)}
+          />
+          <TextField
+            label="Milestone Description"
+            fullWidth
+            margin="normal"
+            value={newMilestoneDescription}
+            onChange={(e) => setNewMilestoneDescription(e.target.value)}
           />
           <Button variant="contained" color="primary" onClick={handleEditMilestone}>
             Save Changes

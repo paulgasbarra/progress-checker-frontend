@@ -10,9 +10,13 @@ import {
   Box,
   TextField,
   IconButton,
+  Alert,
+  Card,
+  CardContent,
+  CardActions,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
+import { useNavigate } from "react-router-dom";
 
 interface Project {
   id: number;
@@ -31,50 +35,37 @@ const ProjectsPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [openCreateProjectModal, setOpenCreateProjectModal] = useState(false);
-  const [openEditProjectModal, setOpenEditProjectModal] = useState(false);
-  const [openViewProjectModal, setOpenViewProjectModal] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDescription, setNewProjectDescription] = useState("");
   const [newMilestoneTitle, setNewMilestoneTitle] = useState("");
   const [newMilestoneDescription, setNewMilestoneDescription] = useState("");
   const [newCriteria, setNewCriteria] = useState("");
+  const [serverAvailable, setServerAvailable] = useState(true);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Fetch projects from the server
     const fetchProjects = async () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/projects`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         setProjects(data);
+        setServerAvailable(true);
       } catch (error) {
         console.error("Error fetching projects:", error);
+        setServerAvailable(false);
       }
     };
 
     fetchProjects();
   }, []);
 
-  useEffect(() => {
-    // Log milestones whenever they change
-    console.log("Updated milestones:", milestones);
-  }, [milestones]);
-
-  const fetchMilestonesForProject = async (projectId: number) => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/projects/${projectId}/milestones`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Milestones data:", data);
-        setMilestones(data || []); // Ensure milestones is always an array
-      } else {
-        console.error("Failed to fetch milestones");
-        setMilestones([]); // Reset milestones on failure
-      }
-    } catch (error) {
-      console.error("Error fetching milestones:", error);
-      setMilestones([]); // Reset milestones on error
-    }
+  const handleViewProject = (project: Project) => {
+    navigate(`/projects/${project.id}`);
   };
 
   const handleAddMilestone = () => {
@@ -84,16 +75,6 @@ const ProjectsPage: React.FC = () => {
     ]);
     setNewMilestoneTitle("");
     setNewMilestoneDescription("");
-  };
-
-  const handleAddCriteria = (milestoneId: number) => {
-    setMilestones(milestones.map(milestone => {
-      if (milestone.id === milestoneId) {
-        return { ...milestone, criteria: [...milestone.criteria, newCriteria] };
-      }
-      return milestone;
-    }));
-    setNewCriteria("");
   };
 
   const handleCreateProject = async () => {
@@ -129,72 +110,17 @@ const ProjectsPage: React.FC = () => {
     }
   };
 
-  const handleOpenCreateProjectModal = () => {
-    // Reset form fields
-    setNewProjectName("");
-    setNewProjectDescription("");
-    setMilestones([]);
-    setNewMilestoneTitle("");
-    setNewMilestoneDescription("");
-    setNewCriteria("");
-    setOpenCreateProjectModal(true);
-  };
-
-  const handleEditProject = async (project: Project) => {
-    console.log("Editing project:", project);
-    setSelectedProject(project);
-    setNewProjectName(project.name);
-    setNewProjectDescription(project.description);
-    await fetchMilestonesForProject(project.id);
-    setOpenEditProjectModal(true);
-  };
-
-  const handleViewProject = async (project: Project) => {
-    console.log("Viewing project:", project);
-    setSelectedProject(project);
-    await fetchMilestonesForProject(project.id);
-    setOpenViewProjectModal(true);
-  };
-
-  const handleSaveProjectChanges = async () => {
-    if (!selectedProject) return;
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/projects/${selectedProject.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: newProjectName,
-          description: newProjectDescription,
-          milestones: milestones.map(milestone => ({
-            title: milestone.title,
-            description: milestone.description,
-            criteria: milestone.criteria,
-          })),
-        }),
-      });
-
-      if (response.ok) {
-        const updatedProject = await response.json();
-        setProjects(projects.map(p => (p.id === updatedProject.id ? updatedProject : p)));
-        setOpenEditProjectModal(false);
-        setSelectedProject(null);
-      } else {
-        alert("Failed to update project.");
-      }
-    } catch (error) {
-      console.error("Error updating project:", error);
-    }
-  };
-
   return (
     <Container fixed sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
         Projects
       </Typography>
-      <Button variant="contained" color="primary" onClick={handleOpenCreateProjectModal}>
+      {!serverAvailable && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Server is unavailable. Please try again later.
+        </Alert>
+      )}
+      <Button variant="contained" color="primary" onClick={() => setOpenCreateProjectModal(true)}>
         Create Project
       </Button>
       <List>
@@ -206,16 +132,13 @@ const ProjectsPage: React.FC = () => {
             button
           >
             <ListItemText primary={project.name} secondary={project.description} />
-            <IconButton edge="end" onClick={(e) => { e.stopPropagation(); handleEditProject(project); }}>
-              <EditIcon />
-            </IconButton>
           </ListItem>
         ))}
       </List>
 
       {/* Create Project Modal */}
       <Modal open={openCreateProjectModal} onClose={() => setOpenCreateProjectModal(false)}>
-        <Box sx={{ ...modalStyle }}>
+        <Box sx={{ ...modalStyle, maxHeight: '80vh', overflow: 'auto' }}>
           <Typography variant="h6">Create Project</Typography>
           <TextField
             label="Project Name"
@@ -233,34 +156,19 @@ const ProjectsPage: React.FC = () => {
             value={newProjectDescription}
             onChange={(e) => setNewProjectDescription(e.target.value)}
           />
-          <Typography variant="h6" sx={{ mt: 2 }}>Milestones</Typography>
+          <Box display="flex" alignItems="center" sx={{ mt: 2 }}>
+            <Typography variant="h6">Milestones</Typography>
+            <IconButton onClick={handleAddMilestone}>
+              <AddIcon />
+            </IconButton>
+          </Box>
           {milestones && milestones.map((milestone) => (
-            <Box key={milestone.id} sx={{ mb: 2 }}>
-              <Typography variant="subtitle1">{milestone.title}</Typography>
-              <Typography variant="body2">{milestone.description}</Typography>
-              <Typography variant="body2">Criteria:</Typography>
-              {/* <List>
-                {milestone.criteria.map((criterion, index) => (
-                  <ListItem key={index}>
-                    <ListItemText primary={criterion} />
-                  </ListItem>
-                ))}
-              </List> */}
-              <TextField
-                label="New Criteria"
-                fullWidth
-                margin="normal"
-                value={newCriteria}
-                onChange={(e) => setNewCriteria(e.target.value)}
-              />
-              <Button
-                variant="outlined"
-                startIcon={<AddIcon />}
-                onClick={() => handleAddCriteria(milestone.id)}
-              >
-                Add Criteria
-              </Button>
-            </Box>
+            <Card key={milestone.id} sx={{ mb: 2 }}>
+              <CardContent>
+                <Typography variant="subtitle1">{milestone.title}</Typography>
+                <Typography variant="body2">{milestone.description}</Typography>
+              </CardContent>
+            </Card>
           ))}
           <TextField
             label="Milestone Title"
@@ -288,89 +196,6 @@ const ProjectsPage: React.FC = () => {
           <Button variant="contained" color="primary" sx={{ mt: 2 }} onClick={handleCreateProject}>
             Save Project
           </Button>
-        </Box>
-      </Modal>
-
-      {/* Edit Project Modal */}
-      <Modal open={openEditProjectModal} onClose={() => setOpenEditProjectModal(false)}>
-        <Box sx={{ ...modalStyle }}>
-          <Typography variant="h6">Edit Project</Typography>
-          <TextField
-            label="Project Name"
-            fullWidth
-            margin="normal"
-            value={newProjectName}
-            onChange={(e) => setNewProjectName(e.target.value)}
-          />
-          <TextField
-            label="Project Description"
-            fullWidth
-            margin="normal"
-            multiline
-            rows={4}
-            value={newProjectDescription}
-            onChange={(e) => setNewProjectDescription(e.target.value)}
-          />
-          <Typography variant="h6" sx={{ mt: 2 }}>Milestones</Typography>
-          {milestones && milestones.map((milestone) => (
-            <Box key={milestone.id} sx={{ mb: 2 }}>
-              <Typography variant="subtitle1">{milestone.title}</Typography>
-              <Typography variant="body2">{milestone.description}</Typography>
-              <Typography variant="body2">Criteria:</Typography>
-              <List>
-                {milestone.criteria && milestone.criteria.map((criterion, index) => (
-                  <ListItem key={index}>
-                    <ListItemText primary={criterion} />
-                  </ListItem>
-                ))}
-              </List>
-              <TextField
-                label="New Criteria"
-                fullWidth
-                margin="normal"
-                value={newCriteria}
-                onChange={(e) => setNewCriteria(e.target.value)}
-              />
-              <Button
-                variant="outlined"
-                startIcon={<AddIcon />}
-                onClick={() => handleAddCriteria(milestone.id)}
-              >
-                Add Criteria
-              </Button>
-            </Box>
-          ))}
-          <Button variant="contained" color="primary" sx={{ mt: 2 }} onClick={handleSaveProjectChanges}>
-            Save Changes
-          </Button>
-        </Box>
-      </Modal>
-
-      {/* View Project Modal */}
-      <Modal open={openViewProjectModal} onClose={() => setOpenViewProjectModal(false)}>
-        <Box sx={{ ...modalStyle }}>
-          <Typography variant="h6">View Project</Typography>
-          {selectedProject && (
-            <>
-              <Typography variant="subtitle1">Name: {selectedProject.name}</Typography>
-              <Typography variant="body2">Description: {selectedProject.description}</Typography>
-              <Typography variant="h6" sx={{ mt: 2 }}>Milestones</Typography>
-              {milestones && milestones.map((milestone) => (
-                <Box key={milestone.id} sx={{ mb: 2 }}>
-                  <Typography variant="subtitle1">{milestone.title}</Typography>
-                  <Typography variant="body2">{milestone.description}</Typography>
-                  <Typography variant="body2">Criteria:</Typography>
-                  <List>
-                    {milestone.criteria && milestone.criteria.map((criterion, index) => (
-                      <ListItem key={index}>
-                        <ListItemText primary={criterion} />
-                      </ListItem>
-                    ))}
-                  </List>
-                </Box>
-              ))}
-            </>
-          )}
         </Box>
       </Modal>
     </Container>

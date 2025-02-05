@@ -6,6 +6,8 @@ import AdminDashboard from "./AdminDashboard";
 import StudentDashboard from "./StudentDashboard";
 import ProjectsPage from "./ProjectsPage";
 import MilestonesPage from "./MilestonesPage";
+import ProjectDetailPage from "./ProjectDetailPage";
+import CheckProgressPage from "./CheckProgressPage";
 
 const drawerWidth = 240;
 
@@ -28,14 +30,17 @@ const App: React.FC = () => {
         >
           <Toolbar />
           <List>
-            <ListItem button component="a" href="/projects">
+            <ListItem component="a" href="/projects">
               <ListItemText primary="Projects" />
             </ListItem>
-            <ListItem button component="a" href="/milestones">
+            <ListItem component="a" href="/milestones">
               <ListItemText primary="Milestones" />
             </ListItem>
+            <ListItem component="a" href="/check-progress">
+              <ListItemText primary="Check Progress" />
+            </ListItem>
             {["Submissions", "Students"].map((text) => (
-              <ListItem button key={text}>
+              <ListItem key={text}>
                 <ListItemText primary={text} />
               </ListItem>
             ))}
@@ -49,6 +54,8 @@ const App: React.FC = () => {
             <Route path="/student" element={<StudentDashboard />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/milestones" element={<MilestonesPage />} />
+            <Route path="/projects/:id" element={<ProjectDetailPage />} />
+            <Route path="/check-progress" element={<CheckProgressPage />} />
           </Routes>
         </main>
       </div>
